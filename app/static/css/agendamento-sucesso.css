@@ -7,9 +7,6 @@
     --text-primary: #E0E0E0;
     --text-secondary: #A0A0A0;
     --border-color: #333;
-    --indigo-primary: #4f46e5; /* Um índigo moderno e vibrante */
-    --indigo-dark: #3730a3;
-    --border-indigo: rgba(79, 70, 229, 0.4);
 }
 
 * {
@@ -466,6 +463,46 @@ body {
     }
 }
 
+/* --- Estilos para a Página de Sucesso --- */
+.success-card {
+    background-color: var(--primary-surface);
+    padding: 2rem 3rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    text-align: center;
+    margin-top: 3rem;
+}
+
+.success-icon {
+    font-size: 5rem;
+    color: #28a745; /* Verde para sucesso */
+    margin-bottom: 1.5rem;
+    line-height: 1;
+}
+
+.success-card h2 {
+    font-size: 2.2rem;
+    margin-bottom: 1rem;
+}
+
+.success-card p {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    max-width: 600px;
+    margin: 0 auto; /* Centraliza o parágrafo se ele for menor que o container */
+}
+
+.success-card .actions {
+    margin-top: 2.5rem;
+}
+
+/* Garante que o botão na página de sucesso não ocupe a largura toda */
+.success-card .cta-button {
+    width: auto;
+    padding: 0.8rem 2.5rem;
+}
+
+
 /* --- Estilos para o Rodapé Principal --- */
 .main-footer {
     text-align: center;
@@ -476,109 +513,59 @@ body {
     border-top: 1px solid var(--border-color);
 }
 
-/* --- Estilos da Página Inicial (Hero Section) --- */
-.landing-page-body {
-    /* Gradiente sutil do preto para um azul/índigo escuro */
-    background: linear-gradient(170deg, var(--bg-color) 20%, #1a1a2e 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
+
+/* --- Ajuste no logo para permitir ícone --- */
+.logo a i {
+    margin-right: 0.5rem;
+    color: var(--primary-accent);
 }
 
-.hero-section {
+/* --- Estilos para a Página de Sucesso --- */
+.success-card {
+    background-color: var(--primary-surface);
+    padding: 2rem 3rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
     text-align: center;
-    max-width: 800px;
-    padding: 2rem;
+    margin-top: 3rem;
 }
 
-.hero-content {
-    /* Efeito de vidro sutil para destacar o conteúdo */
-    background: rgba(30, 30, 30, 0.3);
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
-    border: 1px solid var(--border-color);
-    padding: 3rem;
-    border-radius: 16px;
+.success-icon {
+    font-size: 5rem;
+    color: #28a745; /* Verde para sucesso */
+    margin-bottom: 1.5rem;
+    line-height: 1;
 }
 
-.hero-title {
-    font-size: 3.5rem;
-    font-weight: 700;
-    line-height: 1.2;
+.success-card h2 {
+    font-size: 2.2rem;
     margin-bottom: 1rem;
-    /* Gradiente no texto para um efeito premium */
-    background: linear-gradient(45deg, var(--indigo-primary), #c25fff);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    text-fill-color: transparent;
 }
 
-.hero-subtitle {
-    font-size: 1.1rem;
+.success-card p {
     color: var(--text-secondary);
+    font-size: 1.1rem;
     max-width: 600px;
-    margin: 0 auto 2.5rem auto;
+    margin: 0 auto; /* Centraliza o parágrafo se ele for menor que o container */
 }
 
-.hero-actions {
-    display: flex;
-    justify-content: center;
-    gap: 1rem;
-    flex-wrap: wrap; /* Para telas menores */
+.success-card .actions {
+    margin-top: 2.5rem;
 }
 
-/* --- Variações do Botão Principal --- */
-
-/* Botão Primário (Índigo) */
-.cta-button.primary {
-    background-color: var(--indigo-primary);
-    color: #fff;
+/* Garante que o botão na página de sucesso não ocupe a largura toda */
+.success-card .cta-button {
+    width: auto;
+    padding: 0.8rem 2.5rem;
 }
 
-.cta-button.primary:hover {
-    background-color: var(--indigo-dark);
-    transform: translateY(-3px); /* Efeito de levantar mais acentuado */
-    box-shadow: 0 4px 20px rgba(79, 70, 229, 0.3);
-}
 
-/* Botão Secundário (Apenas borda) */
-.cta-button.secondary {
-    background-color: transparent;
-    color: var(--text-primary);
-    border: 1px solid var(--border-color);
-}
-
-.cta-button.secondary:hover {
-    background-color: var(--secondary-surface);
-    border-color: var(--text-primary);
-}
-
-/* Ajustes de responsividade para o título em telas pequenas */
-@media (max-width: 768px) {
-    .hero-title {
-        font-size: 2.5rem;
-    }
-    .hero-content {
-        padding: 2rem;
-    }
-}
-
-/* Estilo para o Header ter um efeito "Glassmorphism" sobre o fundo */
-.glass-header {
-    position: fixed; /* Fixa o header no topo */
-    width: 100%;
-    top: 0;
-    left: 0;
-    background: rgba(30, 30, 30, 0.5); /* Fundo semi-transparente */
-    backdrop-filter: blur(10px); /* Efeito de desfoque no que está atrás */
-    -webkit-backdrop-filter: blur(10px);
-    border-bottom: 1px solid rgba(50, 50, 50, 0.5); /* Borda sutil */
-    z-index: 1000;
-}
-
-/* Ajuste no hero-section para não ficar escondido atrás do header fixo */
-.hero-section {
-    padding-top: 80px; /* Adiciona um espaço no topo igual ou maior que a altura do header */
+/* --- Estilos para o Rodapé Principal --- */
+.main-footer {
+    text-align: center;
+    padding: 2rem;
+    margin-top: 3rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    border-top: 1px solid var(--border-color);
 }

@@ -10,10 +10,12 @@ class Application:
         self.pages = {
             'portal': self.portal,
             'pagina': self.pagina,
+            'agendar': self.agendar,
             'create': self.create,
             'delete': self.delete,
             'chat': self.chat,
-            'edit': self.edit
+            'edit': self.edit,
+            'agendamento-sucesso': self.agendamento_sucesso
         }
         self.__users = UserRecord()
         self.__messages = MessageRecord()
@@ -49,6 +51,14 @@ class Application:
         @self.app.route('/pagina', method='GET')
         def pagina_getter():
             return self.render('pagina')
+        
+        @self.app.route('/agendar', method='GET')
+        def pagina_getter():
+            return self.render('agendar')
+        
+        @self.app.route('/agendamento-sucesso', method='POST')
+        def agendamento_sucesso_post():
+            return self.render('agendamento-sucesso')
 
         @self.app.route('/chat', method='GET')
         def chat_getter():
@@ -154,6 +164,13 @@ class Application:
         if current_user:
             return template('app/views/html/pagina', transfered=True, current_user=current_user)
         return template('app/views/html/pagina', transfered=False)
+    
+    def agendar(self):
+        self.update_users_list()
+        current_user = self.getCurrentUserBySessionId()
+        if current_user:
+            return template('app/views/html/agendar', transfered=True, current_user=current_user)
+        return template('app/views/html/portal', transfered=False)
 
     def is_authenticated(self, username):
         current_user = self.getCurrentUserBySessionId()
@@ -210,6 +227,8 @@ class Application:
             print(f"Encoding error: {e}")
             return "An error occurred while processing the message."
 
+    def agendamento_sucesso(self):
+        return template('app/views/html/agendamento-sucesso', transfered=False)
 
     # Websocket:
 
