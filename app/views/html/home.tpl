@@ -14,7 +14,7 @@
 
     <header class="main-header glass-header">
         <div class="logo">
-            <a href="/pagina">Sonar Studio</a>
+            <a href="/home">Sonar Studio</a>
         </div>
         <nav class="main-nav">
             <ul>

@@ -13,7 +13,7 @@
 <body>
     <header class="main-header">
         <div class="logo">
-            <a href="/pagina">Sonar Studio</a>
+            <a href="/home">Sonar Studio</a>
         </div>
         <nav class="main-nav">
              <ul>
@@ -37,7 +37,7 @@
             </p>
 
             <div class="actions">
-                <a href="/pagina" class="cta-button">Voltar à página inicial</a>
+                <a href="/home" class="cta-button">Voltar à página inicial</a>
             </div>
         </div>
 

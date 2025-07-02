@@ -45,7 +45,8 @@
                 <p>Preencha os detalhes abaixo para reservar seu horário no estúdio.</p>
             </div>
             
-            <form id="booking-form" class="booking-form" action="/agendamento-sucesso" method="post">
+            <!--- <form id="booking-form" class="booking-form" action="/agendamento-sucesso" method="post"> -->
+            <form id="booking-form" class="booking-form" action="/agendar" method="post">    
                 <div class="form-group">
                     <label for="service-type">Tipo de Serviço</label>
                     <select id="service-type" name="service_type" required>

@@ -1,4 +1,4 @@
-from app.controllers.datarecord import UserRecord, MessageRecord
+from app.controllers.datarecord import UserRecord, MessageRecord, SessionRecord
 from bottle import template, redirect, request, response, Bottle, static_file
 import socketio
 
@@ -9,7 +9,7 @@ class Application:
 
         self.pages = {
             'portal': self.portal,
-            'pagina': self.pagina,
+            'home': self.home,
             'agendar': self.agendar,
             'create': self.create,
             'delete': self.delete,
@@ -19,6 +19,7 @@ class Application:
         }
         self.__users = UserRecord()
         self.__messages = MessageRecord()
+        self.__sessions = SessionRecord()
 
         self.edited = None
         self.removed = None
@@ -48,15 +49,32 @@ class Application:
         def favicon():
             return static_file('favicon.ico', root='.app/static')
 
-        @self.app.route('/pagina', method='GET')
-        def pagina_getter():
-            return self.render('pagina')
+        # ROTA DAS PÁGINAS
+        @self.app.route('/home', method='GET')
+        def home_getter():
+            return self.render('home')
         
         @self.app.route('/agendar', method='GET')
-        def pagina_getter():
+        def agendar_getter():
             return self.render('agendar')
         
-        @self.app.route('/agendamento-sucesso', method='POST')
+        @self.app.route('/agendar', method='POST')
+        def agendar_action():
+            tipo_servico = request.forms.get('service_type')
+            data_servico = request.forms.get('session_date')
+            horario_servico = request.forms.get('session_time')
+            detalhes = request.forms.get('project_details')
+            cliente = self.getCurrentUserBySessionId()
+            
+            print(tipo_servico, data_servico, horario_servico, detalhes)
+            # cliente = self.getCurrentUserBySessionId()['username']
+
+            print(cliente)
+            self.__sessions.bookSession(tipo_servico, data_servico, horario_servico, detalhes, 'Godofredo')
+            
+            return self.agendamento_sucesso()
+
+        @self.app.route('/agendamento-sucesso', method='GET')
         def agendamento_sucesso_post():
             return self.render('agendamento-sucesso')
 
@@ -128,6 +146,7 @@ class Application:
         session_id = request.get_cookie('session_id')
         return self.__users.getCurrentUser(session_id)
 
+    ## PÁGINAS DE GESTÃO DE USUÁRIO PELO PORTAL
     def create(self):
         return template('app/views/html/create')
 
@@ -158,12 +177,13 @@ class Application:
         self.created= None
         return portal_render
 
-    def pagina(self):
+    ## PÁGINAS DA APLICAÇÃO
+    def home(self):
         self.update_users_list()
         current_user = self.getCurrentUserBySessionId()
         if current_user:
-            return template('app/views/html/pagina', transfered=True, current_user=current_user)
-        return template('app/views/html/pagina', transfered=False)
+            return template('app/views/html/home', transfered=True, current_user=current_user)
+        return template('app/views/html/portal', transfered=False)
     
     def agendar(self):
         self.update_users_list()
@@ -172,6 +192,12 @@ class Application:
             return template('app/views/html/agendar', transfered=True, current_user=current_user)
         return template('app/views/html/portal', transfered=False)
 
+    def insert_session(self, username, password):
+        self.created= self.__users.book(username, password,[])
+        self.update_account_list()
+        redirect('/portal')
+
+    ## ROTAS DE USUÁRIOS
     def is_authenticated(self, username):
         current_user = self.getCurrentUserBySessionId()
         if current_user:
@@ -183,7 +209,7 @@ class Application:
         if session_id:
             self.logout_user()
             response.set_cookie('session_id', session_id, httponly=True, secure=True, max_age=3600)
-            redirect('/pagina')
+            redirect('/home')
         redirect('/portal')
 
     def delete_user(self):
