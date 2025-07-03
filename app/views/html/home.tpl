@@ -11,20 +11,24 @@
     <link rel="stylesheet" href="/static/css/pagina.css">
 </head>
 <body class="landing-page-body">
-
+    % if transfered:
     <header class="main-header glass-header">
         <div class="logo">
             <a href="/home">Sonar Studio</a>
         </div>
         <nav class="main-nav">
             <ul>
-                <li><a href="/portal">Portal</a></li>
+                <li><a href="/portal">Portal</a></li> 
                 <li><a href="/chat">Mensagens</a></li>
+                % if current_user.isAdmin():
+                    <li><a href="/admin">Admin</a></li>
+                % end
                 <li>
                     <div class="user-menu">
                         <span>Olá, {{current_user.username}}</span>
                         <div class="dropdown-menu">
                             <a href="/edit">Editar Perfil</a>
+                            <a href="/minhas-sessoes" class="active">Minhas Sessões</a>
                             <form action="/logout" method="post">
                                 <button type="submit" class="logout-btn">Logout</button>
                             </form>
@@ -46,6 +50,20 @@
             </div>
         </div>
     </main>
+
+    % else:
+    <div class="login-prompt">
+        <h1>Página Exclusiva para Clientes</h1>
+        <h3>Realize o login para agendar sua sessão.</h3>
+        <a href="/portal" class="cta-button">Ir para o Portal</a>
+    </div>
+    % end
+
+    <footer class="main-footer">
+        <p>&copy; 2025 Sonar Studio - All rights reserved.</p>
+    </footer>
+
+    <script src="/static/js/script.js"></script>
 
 </body>
 </html>

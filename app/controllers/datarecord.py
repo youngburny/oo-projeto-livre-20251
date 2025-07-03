@@ -135,8 +135,6 @@ class SessionRecord():
 
     def __init__(self):
         self.__sessions= []
-        self.__allusers= {'user_accounts': [], 'super_accounts': []}
-        self.__authenticated_users = {}
         self.read()
 
     def read(self):
@@ -175,7 +173,7 @@ class SessionRecord():
 
     def removeSession(self, idSessao):
         for session in self.__sessions:
-            if idSessao in session.idSessao:
+            if idSessao == session.idSessao:
                 print(f'A Sessão {idSessao} foi encontrada!')
                 self.__sessions.remove(session)
                 print(f'A Sessão {idSessao} foi removida!')
@@ -188,7 +186,7 @@ class SessionRecord():
         new_session = Session(str(uuid.uuid4()), tipoServico, dataServico, horarioServico, detalhes, cliente)
         self.__sessions.append(new_session)
         self.__write()
-        
+           
         return new_session.idSessao
 
     def getSession(self, idSessao):
@@ -196,8 +194,15 @@ class SessionRecord():
             if idSessao == session.idSessao:
                 return session
 
-    def getSessions(self):
-        return self.__sessions
+    def getSessions(self, username=None):
+        if not username:
+            return self.__sessions
+        else:
+            return [sessao for sessao in self.__sessions if sessao.cliente == username]
+        
+        
+#-------------------------------------------------------------------------------
+
 
     def getCurrentUser(self,session_id):
         if session_id in self.__authenticated_users:

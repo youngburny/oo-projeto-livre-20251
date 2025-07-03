@@ -15,8 +15,10 @@ class Application:
             'delete': self.delete,
             'chat': self.chat,
             'edit': self.edit,
-            'agendamento-sucesso': self.agendamento_sucesso
+            'agendamento-sucesso': self.agendamento_sucesso,
+            'minhas-sessoes': self.minhas_sessoes
         }
+        
         self.__users = UserRecord()
         self.__messages = MessageRecord()
         self.__sessions = SessionRecord()
@@ -60,24 +62,107 @@ class Application:
         
         @self.app.route('/agendar', method='POST')
         def agendar_action():
+            current_user = self.getCurrentUserBySessionId()
+            
             tipo_servico = request.forms.get('service_type')
             data_servico = request.forms.get('session_date')
             horario_servico = request.forms.get('session_time')
             detalhes = request.forms.get('project_details')
-            cliente = self.getCurrentUserBySessionId()
+            cliente = current_user.username
+        
+            self.__sessions.bookSession(tipo_servico, data_servico, horario_servico, detalhes, cliente)
             
-            print(tipo_servico, data_servico, horario_servico, detalhes)
-            # cliente = self.getCurrentUserBySessionId()['username']
-
-            print(cliente)
-            self.__sessions.bookSession(tipo_servico, data_servico, horario_servico, detalhes, 'Godofredo')
-            
-            return self.agendamento_sucesso()
+            return self.agendamento_sucesso(current_user=current_user)
 
         @self.app.route('/agendamento-sucesso', method='GET')
-        def agendamento_sucesso_post():
+        def agendamento_sucesso_getter():
             return self.render('agendamento-sucesso')
 
+        @self.app.route('/minhas-sessoes', method='GET')
+        def minhas_sessoes_getter():
+            return self.render('minhas-sessoes')
+        
+        # --- Rotas para Edição de Sessão ---
+        @self.app.route('/editar-sessao/<idSessao>', method='GET')
+        def editar_sessao_getter(idSessao):
+            current_user = self.getCurrentUserBySessionId()
+            if not current_user:
+                return redirect('/portal')
+            
+            # Busca a sessão pelo ID para pré-preencher o formulário
+            sessao_para_editar = self.__sessions.getSession(idSessao)
+            
+            if not sessao_para_editar or sessao_para_editar.cliente != current_user.username:
+                # Se a sessão não existir ou não pertencer ao usuário logado, redireciona
+                return redirect('/minhas-sessoes') # Ou uma página de erro/acesso negado
+            
+            return template(
+                'app/views/html/editar_sessao', 
+                current_user=current_user, 
+                sessao=sessao_para_editar, 
+                transfered=True
+            )
+
+        @self.app.route('/editar-sessao/<idSessao>', method='POST')
+        def editar_sessao_action(idSessao):
+            current_user = self.getCurrentUserBySessionId()
+            if not current_user:
+                return redirect('/portal')
+            
+            # Pega os dados do formulário
+            tipo_servico = request.forms.get('service_type')
+            data_servico = request.forms.get('session_date')
+            horario_servico = request.forms.get('session_time')
+            detalhes = request.forms.get('project_details')
+
+            # Tenta atualizar a sessão
+            # O setSession promove o funcionamento de atualização
+            # Passamos os dados que podem ter sido alterados
+            self.__sessions.setSession(
+                idSessao=idSessao, 
+                tipoServico=tipo_servico, 
+                dataServico=data_servico, 
+                horarioServico=horario_servico, 
+                detalhes=detalhes,
+                cliente=current_user.username # Garantir que o cliente não mude indevidamente
+            )
+            
+            redirect('/minhas-sessoes') # Redireciona de volta para a lista de sessões
+
+        # --- Rotas para Remoção de Sessão --------------------------------
+        @self.app.route('/confirmar-remocao-sessao/<idSessao>', method='GET')
+        def confirmar_remocao_sessao_getter(idSessao):
+            current_user = self.getCurrentUserBySessionId()
+            if not current_user:
+                return redirect('/portal')
+            
+            sessao_para_remover = self.__sessions.getSession(idSessao)
+
+            if not sessao_para_remover or sessao_para_remover.cliente != current_user.username:
+                return redirect('/minhas-sessoes')
+            
+            return template(
+                'app/views/html/confirmar_remocao_sessao',
+                current_user=current_user,
+                sessao=sessao_para_remover,
+                transfered=True
+            )
+
+        @self.app.route('/remover-sessao/<idSessao>', method='POST')
+        def remover_sessao_action(idSessao):
+            current_user = self.getCurrentUserBySessionId()
+            if not current_user:
+                return redirect('/portal')
+            
+            # Verifica se a sessão realmente pertence ao usuário antes de remover
+            sessao_existente = self.__sessions.getSession(idSessao)
+            if sessao_existente and sessao_existente.cliente == current_user.username:
+                self.__sessions.removeSession(idSessao)
+            
+            redirect('/minhas-sessoes')
+        
+#------------------------------------------------------------------------------------
+        
         @self.app.route('/chat', method='GET')
         def chat_getter():
             return self.render('chat')
@@ -192,11 +277,32 @@ class Application:
             return template('app/views/html/agendar', transfered=True, current_user=current_user)
         return template('app/views/html/portal', transfered=False)
 
-    def insert_session(self, username, password):
-        self.created= self.__users.book(username, password,[])
-        self.update_account_list()
-        redirect('/portal')
+    def minhas_sessoes(self):
+        self.update_users_list()
+        current_user = self.getCurrentUserBySessionId()
+        if current_user:
+            
+            if not current_user:
+                return redirect('/portal') 
+            
+            nome_usuario = current_user.username
+            
+            # Usa o método que criamos no Passo 1 para buscar os dados
+            lista_de_sessoes = self.__sessions.getSessions(nome_usuario)
+            
+            # Renderiza o novo template, passando a lista de sessões para ele
+            return template(
+                'app/views/html/minhas_sessoes', 
+                sessoes=lista_de_sessoes,
+                current_user=current_user,
+                transfered=True
+            )
 
+        return template('app/views/html/portal', transfered=False)
+    
+    def agendamento_sucesso(self, current_user):
+        return template('app/views/html/agendamento-sucesso', transfered=True, current_user=current_user)   
+        
     ## ROTAS DE USUÁRIOS
     def is_authenticated(self, username):
         current_user = self.getCurrentUserBySessionId()
@@ -252,9 +358,6 @@ class Application:
         except UnicodeEncodeError as e:
             print(f"Encoding error: {e}")
             return "An error occurred while processing the message."
-
-    def agendamento_sucesso(self):
-        return template('app/views/html/agendamento-sucesso', transfered=False)
 
     # Websocket:
 

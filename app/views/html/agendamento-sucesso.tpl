@@ -16,10 +16,25 @@
             <a href="/home">Sonar Studio</a>
         </div>
         <nav class="main-nav">
-             <ul>
-                <li><a href="/portal">Portal</a></li>
+            <ul>
+                <li><a href="/portal">Portal</a></li> 
                 <li><a href="/chat">Mensagens</a></li>
-                </ul>
+                % if current_user.isAdmin():
+                    <li><a href="/admin">Admin</a></li>
+                % end
+                <li>
+                    <div class="user-menu">
+                        <span>Olá, {{current_user.username}}</span>
+                        <div class="dropdown-menu">
+                            <a href="/edit">Editar Perfil</a>
+                            <a href="/minhas-sessoes" class="active">Minhas Sessões</a>
+                            <form action="/logout" method="post">
+                                <button type="submit" class="logout-btn">Logout</button>
+                            </form>
+                        </div>
+                    </div>
+                </li>
+            </ul>
         </nav>
     </header>
 
@@ -46,5 +61,8 @@
     <footer class="main-footer">
         <p>&copy; 2025 Sonar Studio - Todos os direitos reservados.</p>
     </footer>
+
+    <script src="/static/js/script.js"></script>
+
 </body>
 </html>

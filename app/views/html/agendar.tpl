@@ -14,7 +14,7 @@
     % if transfered:
     <header class="main-header">
         <div class="logo">
-            <a href="/pagina">Sonar Studio</a>
+            <a href="/home">Sonar Studio</a>
         </div>
         <nav class="main-nav">
             <ul>
@@ -28,6 +28,7 @@
                         <span>Olá, {{current_user.username}}</span>
                         <div class="dropdown-menu">
                             <a href="/edit">Editar Perfil</a>
+                            <a href="/minhas-sessoes" class="active">Minhas Sessões</a>
                             <form action="/logout" method="post">
                                 <button type="submit" class="logout-btn">Logout</button>
                             </form>
@@ -86,6 +87,10 @@
         <a href="/portal" class="cta-button">Ir para o Portal</a>
     </div>
     % end
+
+    <footer class="main-footer">
+        <p>&copy; 2025 Sonar Studio - All rights reserved.</p>
+    </footer>
 
     <script src="/static/js/script.js"></script>
 </body>

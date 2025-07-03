@@ -512,7 +512,7 @@ body {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    text-fill-color: transparent;
+    text-emphasis-color: transparent;
 }
 
 .hero-subtitle {
@@ -581,4 +581,50 @@ body {
 /* Ajuste no hero-section para não ficar escondido atrás do header fixo */
 .hero-section {
     padding-top: 80px; /* Adiciona um espaço no topo igual ou maior que a altura do header */
+
+ /* Estilos existentes para sessao-actions (manter ou ajustar se necessário) */
+.sessao-actions {
+    margin-top: 15px;
+    display: flex;
+    justify-content: flex-end; /* Alinha os botões à direita */
+    gap: 10px; /* Espaçamento entre os botões */
+    padding-top: 10px; /* Adiciona um pequeno padding no topo do container dos botões */
+    border-top: 1px solid rgba(255, 255, 255, 0.1); /* Linha divisória sutil */
+}
+
+/* Estilos aprimorados para os botões "Editar" e "Remover" */
+.sessao-actions .button-link {
+    padding: 10px 20px; /* Aumenta o padding para um botão maior */
+    border-radius: 25px; /* Deixa os cantos mais arredondados (formato pílula) */
+    text-decoration: none;
+    font-weight: 700; /* Mais negrito */
+    transition: all 0.3s ease; /* Transição mais suave para todas as propriedades */
+    font-size: 0.95em; /* Levemente maior */
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra para dar profundidade */
+}
+
+.edit-button {
+    background-color: #A259FF; /* Seu roxo vibrante */
+    color: #FFFFFF; /* Texto branco puro */
+    border: none; /* Remove a borda para um look mais limpo */
+}
+
+.edit-button:hover {
+    background-color: #8000FF; /* Roxo mais escuro no hover */
+    transform: translateY(-3px) scale(1.02); /* Efeito de "subir" e "crescer" um pouco */
+    box-shadow: 0 6px 12px rgba(128, 0, 255, 0.4); /* Sombra mais intensa */
+}
+
+.delete-button {
+    background-color: #FF4D4D; /* Um vermelho um pouco mais vivo para destaque */
+    color: #FFFFFF; /* Texto branco puro */
+    border: none; /* Remove a borda */
+}
+
+.delete-button:hover {
+    background-color: #E60000; /* Vermelho mais escuro no hover */
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 6px 12px rgba(255, 77, 77, 0.4);
+}
 }
