@@ -1,0 +1,52 @@
+/* Estilos específicos para o painel de admin */
+.admin-dashboard {
+    max-width: 1400px;
+    margin: 40px auto;
+    padding: 20px;
+}
+.admin-dashboard h2 {
+    font-size: 2.5em;
+    color: #A259FF;
+    margin-bottom: 30px;
+    border-bottom: 2px solid #333;
+    padding-bottom: 15px;
+}
+.dashboard-section {
+    margin-bottom: 50px;
+    background-color: #1e1e1e;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    border: 1px solid #333;
+}
+.section-title {
+    color: #d1d1d1;
+    font-size: 1.8em;
+    margin-bottom: 20px;
+}
+
+/* Estilos para a tabela de sessões/usuários */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+.data-table th, .data-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #444;
+    color: #eee;
+}
+.data-table th {
+    background-color: #2a2a2a;
+    color: #A259FF;
+    font-weight: 700;
+}
+.data-table tbody tr:hover {
+    background-color: #262626;
+}
+.no-data {
+    text-align: center;
+    padding: 20px;
+    color: #999;
+}

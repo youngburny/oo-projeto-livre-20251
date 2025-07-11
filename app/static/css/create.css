@@ -1,0 +1,132 @@
+/* -- Estilos para a página de Criação de Conta -- */
+
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: 'Poppins', sans-serif;
+    background: #121212; /* Fundo preto base */
+    color: #ffffff;
+}
+
+/* Reutilizando o container e os detalhes visuais do portal */
+.create-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+    /* Gradientes no fundo para um visual dinâmico */
+    background: radial-gradient(circle at 10% 20%, rgba(50, 10, 100, 0.1) 0%, rgba(0, 0, 0, 0) 70%),
+                radial-gradient(circle at 90% 80%, rgba(162, 89, 255, 0.1) 0%, rgba(0, 0, 0, 0) 70%);
+}
+
+.create-card {
+    background: #1e1e1e; /* Fundo do card */
+    padding: 45px;
+    border-radius: 20px;
+    /* Sombra profunda e detalhe de borda */
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6), 0 0 0 5px #2a2a2a;
+    width: 100%;
+    max-width: 500px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+}
+
+.create-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+}
+
+/* Detalhe de gradiente no topo do card */
+.create-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 6px;
+    border-radius: 20px 20px 0 0;
+    background: linear-gradient(90deg, #A259FF, #8000FF, #A259FF);
+}
+
+.create-card h2 {
+    color: #A259FF;
+    margin-bottom: 30px;
+    font-size: 2.5em;
+    font-weight: 800;
+}
+
+/* -- Formulário e Inputs -- */
+
+.input-group {
+    margin-bottom: 25px;
+    text-align: left;
+}
+
+.input-group label {
+    display: block;
+    color: #d1d1d1;
+    margin-bottom: 10px;
+    font-weight: 600;
+    font-size: 0.95em;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 14px 18px;
+    border-radius: 10px;
+    border: 1px solid #444;
+    background-color: #333;
+    color: #eee;
+    font-size: 1em;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    box-sizing: border-box;
+}
+
+.input-group input:focus {
+    border-color: #A259FF;
+    box-shadow: 0 0 0 3px rgba(162, 89, 255, 0.3);
+    background-color: #383838;
+    outline: none;
+}
+
+/* -- Botão de Criação de Conta -- */
+
+.create-button {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #A259FF 0%, #8000FF 100%);
+    color: #fff;
+    font-size: 1.25em;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 10px 20px rgba(162, 89, 255, 0.3);
+    transition: all 0.3s ease;
+}
+
+.create-button:hover {
+    background: linear-gradient(135deg, #8000FF 0%, #A259FF 100%);
+    transform: translateY(-4px);
+    box-shadow: 0 15px 30px rgba(162, 89, 255, 0.4);
+}
+
+/* -- Link de Retorno -- */
+
+.back-to-portal {
+    display: block;
+    margin-top: 30px;
+    color: #A259FF;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.3s ease;
+}
+
+.back-to-portal:hover {
+    color: #8000FF;
+    text-decoration: underline;
+}

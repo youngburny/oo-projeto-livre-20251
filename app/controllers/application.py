@@ -16,7 +16,8 @@ class Application:
             'chat': self.chat,
             'edit': self.edit,
             'agendamento-sucesso': self.agendamento_sucesso,
-            'minhas-sessoes': self.minhas_sessoes
+            'minhas-sessoes': self.minhas_sessoes,
+            'admin': self.admin
         }
         
         self.__users = UserRecord()
@@ -50,6 +51,10 @@ class Application:
         @self.app.route('/favicon.ico')
         def favicon():
             return static_file('favicon.ico', root='.app/static')
+        
+        @self.app.route('/admin', method='GET')
+        def admin_getter():
+            return self.render('admin')
 
         # ROTA DAS PÁGINAS
         @self.app.route('/home', method='GET')
@@ -217,6 +222,19 @@ class Application:
 
 
     # método controlador de acesso às páginas:
+
+    def admin(self):
+        current_user = self.getCurrentUserBySessionId()
+        if current_user and current_user.isAdmin():
+            all_sessions = self.__sessions.getAllSessions()
+            all_users = self.__users.getUserAccounts()
+            return template('app/views/html/admin', current_user=current_user, \
+                            sessions=all_sessions,
+                            users=all_users,
+                            transfered=True)
+        else:
+            return redirect('/home')
+
     def render(self, page, parameter=None):
         content = self.pages.get(page, self.portal)
         if not parameter:
@@ -238,12 +256,12 @@ class Application:
     def delete(self):
         current_user = self.getCurrentUserBySessionId()
         user_accounts= self.__users.getUserAccounts()
-        return template('app/views/html/delete', user=current_user, accounts=user_accounts)
+        return template('app/views/html/delete', current_user=current_user, accounts=user_accounts)
 
     def edit(self):
         current_user = self.getCurrentUserBySessionId()
         user_accounts= self.__users.getUserAccounts()
-        return template('app/views/html/edit', user=current_user, accounts= user_accounts)
+        return template('app/views/html/edit', current_user=current_user, accounts= user_accounts)
 
     def portal(self):
         current_user = self.getCurrentUserBySessionId()

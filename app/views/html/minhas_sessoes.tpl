@@ -59,6 +59,7 @@
                         <div class="dropdown-menu">
                             <a href="/edit">Editar Perfil</a>
                             <a href="/minhas-sessoes" class="active">Minhas Sessões</a>
+                            <a href="/delete">Deletar Perfil</a>
                             <form action="/logout" method="post">
                                 <button type="submit" class="logout-btn">Logout</button>
                             </form>
