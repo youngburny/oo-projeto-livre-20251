@@ -627,4 +627,26 @@ body {
     transform: translateY(-3px) scale(1.02);
     box-shadow: 0 6px 12px rgba(255, 77, 77, 0.4);
 }
+
+/* app/static/css/portal_custom.css ou pagina.css */
+
+.feedback-message {
+    margin-bottom: 20px;
+    padding: 10px;
+    border-radius: 5px;
+    font-weight: 600;
+    text-align: center;
+}
+
+.feedback-message.success {
+    background-color: rgba(92, 184, 92, 0.2); /* Verde claro com transparência */
+    color: #5cb85c; /* Verde */
+    border: 1px solid #5cb85c;
+}
+
+.feedback-message.error {
+    background-color: rgba(220, 53, 69, 0.2); /* Vermelho claro com transparência */
+    color: #dc3545; /* Vermelho */
+    border: 1px solid #dc3545;
+}
 }

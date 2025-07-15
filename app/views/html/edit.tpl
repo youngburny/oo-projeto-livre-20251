@@ -8,10 +8,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="/static/css/pagina.css">
     <link rel="stylesheet" href="/static/css/edit.css">
-    
-    
-</head>
+
+    </head>
 <body>
     % if current_user:
     <header class="main-header glass-header">
@@ -29,6 +30,7 @@
                         <div class="dropdown-menu">
                             <a href="/edit">Editar Perfil</a>
                             <a href="/minhas-sessoes">Minhas Sessões</a>
+                            <a href="/delete">Deletar Perfil</a>
                             <form action="/logout" method="post">
                                 <button type="submit" class="logout-btn">Logout</button>
                             </form>
@@ -40,28 +42,36 @@
     </header>
 
     <main class="container">
-        <div class="form-container">
-            <h2>Editar Perfil</h2>
-            
-            <div class="info-block">
-                <p><strong>Usuário Atual:</strong> {{ current_user.username }}</p>
-                <p><strong>Tipo de Conta:</strong> {{ 'Administrador' if current_user.isAdmin() else 'Cliente' }}</p>
-            </div>
-            
-            <form action="/edit" method="POST">
-                <div class="input-group">
-                    <label for="username">Novo Usuário (opcional):</label>
-                    <input type="text" id="username" name="username" value="{{current_user.username}}" required>
-                </div>
-                <div class="input-group">
-                    <label for="password">Nova Senha:</label>
-                    <input type="password" id="password" name="password" placeholder="Digite a nova senha" required>
+        <div class="form-container-wrapper">
+            <div class="form-container">
+                <h2>Editar Perfil</h2>
+
+                % if feedback_message:
+                    <p class="feedback-message {{ 'success' if 'sucesso' in feedback_message else 'error' }}">
+                        {{ feedback_message }}
+                    </p>
+                % end
+                
+                <div class="info-block">
+                    <p><strong>Usuário Atual:</strong> {{ current_user.username }}</p>
+                    <p><strong>Tipo de Conta:</strong> {{ 'Administrador' if current_user.isAdmin() else 'Cliente' }}</p>
                 </div>
                 
-                <button type="submit" class="submit-button">Salvar Alterações</button>
-            </form>
-            
-            <a href="/home" class="back-link">Cancelar e Voltar</a>
+                <form action="/edit" method="POST">
+                    <div class="input-group">
+                        <label for="username">Novo Usuário:</label>
+                        <input type="text" id="username" name="username" value="{{current_user.username}}" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="password">Nova Senha:</label>
+                        <input type="password" id="password" name="password" placeholder="Digite a nova senha" required>
+                    </div>
+                    
+                    <button type="submit" class="submit-button">Salvar Alterações</button>
+                </form>
+                
+                <a href="/home" class="back-link">Cancelar e Voltar</a>
+            </div>
         </div>
     </main>
 

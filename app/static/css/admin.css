@@ -50,3 +50,39 @@
     padding: 20px;
     color: #999;
 }
+
+/* app/static/css/admin.css */
+
+/* ... (estilos existentes) ... */
+
+/* Estilos para os botões de ação na tabela do Admin */
+.button-link {
+    padding: 6px 12px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.85em;
+    display: inline-block;
+    margin: 0 2px;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.edit-admin-button {
+    background-color: #A259FF; /* Roxo para editar */
+    color: #fff;
+}
+
+.edit-admin-button:hover {
+    background-color: #8000FF;
+    transform: translateY(-1px);
+}
+
+.delete-admin-button {
+    background-color: #dc3545; /* Vermelho para remover */
+    color: #fff;
+}
+
+.delete-admin-button:hover {
+    background-color: #c82333;
+    transform: translateY(-1px);
+}

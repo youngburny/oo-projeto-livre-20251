@@ -27,6 +27,7 @@ class Application:
         self.edited = None
         self.removed = None
         self.created= None
+        self.feedback_message = None
 
         # Initialize Bottle app
         self.app = Bottle()
@@ -94,12 +95,12 @@ class Application:
             if not current_user:
                 return redirect('/portal')
             
-            # Busca a sessão pelo ID para pré-preencher o formulário
             sessao_para_editar = self.__sessions.getSession(idSessao)
             
-            if not sessao_para_editar or sessao_para_editar.cliente != current_user.username:
-                # Se a sessão não existir ou não pertencer ao usuário logado, redireciona
-                return redirect('/minhas-sessoes') # Ou uma página de erro/acesso negado
+            # Permite acesso se for admin, ou se a sessão pertencer ao usuário
+            if not sessao_para_editar or \
+            (sessao_para_editar.cliente != current_user.username and not current_user.isAdmin()):
+                return redirect('/minhas-sessoes') # Redireciona se não for dono nem admin
             
             return template(
                 'app/views/html/editar_sessao', 
@@ -114,25 +115,40 @@ class Application:
             if not current_user:
                 return redirect('/portal')
             
+            sessao_existente = self.__sessions.getSession(idSessao)
+
+            # Verifica se a sessão existe e se o usuário é o dono ou um admin
+            if not sessao_existente or \
+            (sessao_existente.cliente != current_user.username and not current_user.isAdmin()):
+                # Redireciona para a lista de sessões ou admin, dependendo de onde veio
+                return redirect('/minhas-sessoes') # Ou para /admin se veio de lá
+
             # Pega os dados do formulário
             tipo_servico = request.forms.get('service_type')
             data_servico = request.forms.get('session_date')
             horario_servico = request.forms.get('session_time')
             detalhes = request.forms.get('project_details')
 
-            # Tenta atualizar a sessão
-            # O setSession promove o funcionamento de atualização
-            # Passamos os dados que podem ter sido alterados
+            # Se for admin, o cliente da sessão deve ser mantido como o original
+            # Se for o próprio cliente editando, o cliente é o current_user.username
+            cliente_para_atualizar = sessao_existente.cliente # Mantém o cliente original
+           
+
             self.__sessions.setSession(
                 idSessao=idSessao, 
                 tipoServico=tipo_servico, 
                 dataServico=data_servico, 
                 horarioServico=horario_servico, 
                 detalhes=detalhes,
-                cliente=current_user.username # Garantir que o cliente não mude indevidamente
+                cliente=cliente_para_atualizar # Garante que o cliente da sessão não mude indevidamente
             )
             
-            redirect('/minhas-sessoes') # Redireciona de volta para a lista de sessões
+            # Redireciona para a página de onde o usuário veio
+            if current_user.isAdmin():
+                redirect('/admin')
+            else:
+                redirect('/minhas-sessoes')
+
 
         # --- Rotas para Remoção de Sessão --------------------------------
         @self.app.route('/confirmar-remocao-sessao/<idSessao>', method='GET')
@@ -143,7 +159,8 @@ class Application:
             
             sessao_para_remover = self.__sessions.getSession(idSessao)
 
-            if not sessao_para_remover or sessao_para_remover.cliente != current_user.username:
+            if not sessao_para_remover or \
+            (sessao_para_remover.cliente != current_user.username and not current_user.isAdmin()):
                 return redirect('/minhas-sessoes')
             
             return template(
@@ -159,12 +176,21 @@ class Application:
             if not current_user:
                 return redirect('/portal')
             
-            # Verifica se a sessão realmente pertence ao usuário antes de remover
             sessao_existente = self.__sessions.getSession(idSessao)
-            if sessao_existente and sessao_existente.cliente == current_user.username:
-                self.__sessions.removeSession(idSessao)
+
+            if not sessao_existente or \
+            (sessao_existente.cliente != current_user.username and not current_user.isAdmin()):
+                # Redireciona para a lista de sessões ou admin, dependendo de onde veio
+                return redirect('/minhas-sessoes') # Ou para /admin se veio de lá
+
+            self.__sessions.removeSession(idSessao)
             
-            redirect('/minhas-sessoes')
+            # Redireciona para a página de onde o usuário veio
+            if current_user.isAdmin():
+                redirect('/admin')
+            else:
+                redirect('/minhas-sessoes')
+
         
 #------------------------------------------------------------------------------------
         
@@ -175,12 +201,17 @@ class Application:
         @self.app.route('/')
         @self.app.route('/portal', method='GET')
         def portal_getter():
-            return self.render('portal')
+            message = self.feedback_message # Pega a mensagem do atributo da aplicação
+            self.feedback_message = None # Limpa para não ser exibida em futuras requisições GET sem post
+            return self.render('portal', feedback_message=message)
 
         @self.app.route('/edit', method='GET')
         def edit_getter():
-            return self.render('edit')
-
+       
+            message = self.feedback_message
+            self.feedback_message = None
+            return self.render('edit', feedback_message=message)
+        
         @self.app.route('/portal', method='POST')
         def portal_action():
             username = request.forms.get('username')
@@ -189,22 +220,32 @@ class Application:
 
         @self.app.route('/edit', method='POST')
         def edit_action():
-            username = request.forms.get('username')
-            password = request.forms.get('password')
-            print(username + ' sendo atualizado...')
-            self.update_user(username, password)
-            return self.render('edit')
+            current_user_obj = self.getCurrentUserBySessionId()
+            if not current_user_obj:
+                return redirect('/portal')
+
+            old_username = current_user_obj.username # Nome de usuário atual do usuário logado
+            new_username = request.forms.get('username')
+            new_password = request.forms.get('password')
+
+            self.update_user(old_username, new_username, new_password)
+            return redirect('/home') 
 
         @self.app.route('/create', method='GET')
         def create_getter():
-            return self.render('create')
-
+            message = self.feedback_message
+            self.feedback_message = None
+            return self.render('create', feedback_message=message) 
+        
         @self.app.route('/create', method='POST')
         def create_action():
             username = request.forms.get('username')
             password = request.forms.get('password')
+            
+            # Altera como insert_user é chamado, pois ele agora retorna None em caso de falha
             self.insert_user(username, password)
-            return self.render('portal')
+            # O redirecionamento será tratado dentro de insert_user
+            return redirect('/portal') #
 
         @self.app.route('/logout', method='POST')
         def logout_action():
@@ -213,7 +254,10 @@ class Application:
 
         @self.app.route('/delete', method='GET')
         def delete_getter():
-            return self.render('delete')
+          
+            message = self.feedback_message
+            self.feedback_message = None
+            return self.render('delete', feedback_message=message)
 
         @self.app.route('/delete', method='POST')
         def delete_action():
@@ -223,23 +267,35 @@ class Application:
 
     # método controlador de acesso às páginas:
 
-    def admin(self):
+    def admin(self, feedback_message=None):
         current_user = self.getCurrentUserBySessionId()
+
+        print(f"\n--- Tentando acessar /admin ---")
+        print(f"  current_user: {current_user.username if current_user else 'NÃO LOGADO'}")
+        if current_user:
+            print(f"  current_user.isAdmin(): {current_user.isAdmin()}")
+        print("----------------------------\n")
+
         if current_user and current_user.isAdmin():
-            all_sessions = self.__sessions.getAllSessions()
-            all_users = self.__users.getUserAccounts()
-            return template('app/views/html/admin', current_user=current_user, \
-                            sessions=all_sessions,
-                            users=all_users,
-                            transfered=True)
+            todas_sessoes = self.__sessions.getSessions()
+            todos_usuarios = self.__users.getUserAccounts()
+
+            return template(
+                'app/views/html/admin', 
+                current_user=current_user,
+                sessoes=todas_sessoes,
+                usuarios=todos_usuarios,
+                transfered=True,
+                feedback_message=feedback_message # Passa a mensagem de feedback
+            )
         else:
+            self.feedback_message = "Acesso negado: Você precisa ser um administrador."
             return redirect('/home')
 
-    def render(self, page, parameter=None):
-        content = self.pages.get(page, self.portal)
-        if not parameter:
-            return content()
-        return content(parameter)
+    def render(self, page_name, **kwargs):
+        content_method = self.pages.get(page_name, self.portal)
+
+        return content_method(**kwargs)
 
     # métodos controladores de páginas
     def getAuthenticatedUsers(self):
@@ -250,35 +306,47 @@ class Application:
         return self.__users.getCurrentUser(session_id)
 
     ## PÁGINAS DE GESTÃO DE USUÁRIO PELO PORTAL
-    def create(self):
-        return template('app/views/html/create')
+    def create(self, feedback_message=None): 
+        return template('app/views/html/create', feedback_message=feedback_message)
 
-    def delete(self):
+    def delete(self, feedback_message=None): 
         current_user = self.getCurrentUserBySessionId()
-        user_accounts= self.__users.getUserAccounts()
-        return template('app/views/html/delete', current_user=current_user, accounts=user_accounts)
+        if not current_user:
+            return redirect('/portal')
+        return template('app/views/html/delete', current_user=current_user, feedback_message=feedback_message)
 
-    def edit(self):
+    def edit(self, feedback_message=None): # Defina feedback_message como None por padrão
         current_user = self.getCurrentUserBySessionId()
-        user_accounts= self.__users.getUserAccounts()
-        return template('app/views/html/edit', current_user=current_user, accounts= user_accounts)
+        if not current_user:
+            return redirect('/portal')
+        
+        return template('app/views/html/edit', current_user=current_user, feedback_message=feedback_message)
 
-    def portal(self):
+    def portal(self, feedback_message=None): # feedback_message virá de portal_getter ou de redirects
         current_user = self.getCurrentUserBySessionId()
-        if current_user:
-            portal_render = template('app/views/html/portal', \
-            username=current_user.username, edited=self.edited, \
-            removed=self.removed, created=self.created)
-            self.edited = None
-            self.removed= None
-            self.created= None
-            return portal_render
-        portal_render = template('app/views/html/portal', username=None, \
-        edited=self.edited, removed=self.removed, created=self.created)
+        
+        # Prioriza a mensagem que vem diretamente como argumento da rota GET
+        # Senão, pega a mensagem da instância da aplicação (feedback_message setado por redirects POST)
+        final_message_to_display = feedback_message
+        if not final_message_to_display:
+            final_message_to_display = self.feedback_message
+
+        # Limpa a mensagem da instância após ela ter sido recuperada para esta requisição
+        self.feedback_message = None 
+        
+        # Limpa as flags antigas de 'edited', 'removed', 'created'
         self.edited = None
-        self.removed= None
-        self.created= None
-        return portal_render
+        self.removed = None
+        self.created = None
+
+        if current_user:
+            return template('app/views/html/portal', 
+                            username=current_user.username, 
+                            feedback_message=final_message_to_display)
+        
+        return template('app/views/html/portal', 
+                        username=None, 
+                        feedback_message=final_message_to_display) 
 
     ## PÁGINAS DA APLICAÇÃO
     def home(self):
@@ -331,6 +399,7 @@ class Application:
     def authenticate_user(self, username, password):
         session_id = self.__users.checkUser(username, password)
         if session_id:
+            print(f'Usuário {username} autenticado com sucesso!')
             self.logout_user()
             response.set_cookie('session_id', session_id, httponly=True, secure=True, max_age=3600)
             redirect('/home')
@@ -338,20 +407,44 @@ class Application:
 
     def delete_user(self):
         current_user = self.getCurrentUserBySessionId()
-        self.logout_user()
-        self.removed= self.__users.removeUser(current_user)
-        self.update_account_list()
-        print(f'Valor de retorno de self.removed: {self.removed}')
+        if not current_user:
+            self.feedback_message = "Erro: Não há usuário logado para deletar."
+            redirect('/portal')
+            return 
+
+        removed_username = self.__users.removeUser(current_user) 
+        self.logout_user() # Desloga o usuário após tentar a remoção
+        self.update_account_list() # Atualiza lista de usuários (para WebSocket)
+
+        if removed_username:
+            self.feedback_message = f"Conta '{removed_username}' excluída com sucesso!"
+        else:
+            self.feedback_message = "Erro ao excluir conta. Usuário não encontrado no sistema."
+        
+        # Redireciona sempre para o portal após a tentativa de exclusão
         redirect('/portal')
 
     def insert_user(self, username, password):
-        self.created= self.__users.book(username, password,[])
-        self.update_account_list()
-        redirect('/portal')
+        creation_result = self.__users.book(username, password, [])
+        if creation_result:
+            self.feedback_message = f"Conta '{username}' criada com sucesso! Faça login."
+            self.update_account_list()
+            redirect('/portal')
+        else:
+            self.feedback_message = "Erro ao criar conta: Nome de usuário já em uso."
+            redirect('/create')
 
-    def update_user(self, username, password):
-        self.edited = self.__users.setUser(username, password)
-        redirect('/portal')
+    def update_user(self, old_username, new_username, new_password):
+        updated_user_obj = self.__users.setUser(old_username, new_username, new_password)
+        if updated_user_obj:
+            session_id = request.get_cookie('session_id')
+            if session_id and session_id in self.__users.getAuthenticatedUsers():
+                self.__users.getAuthenticatedUsers()[session_id] = updated_user_obj
+            self.feedback_message = "Perfil atualizado com sucesso!"
+            redirect('/home')
+        else:
+            self.feedback_message = "Erro: Nome de usuário já em uso ou outro erro ocorreu."
+            redirect('/edit')
 
     def logout_user(self):
         session_id = request.get_cookie('session_id')

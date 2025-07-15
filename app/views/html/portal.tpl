@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/portal.css">
+
 </head>
 <body>
     <div class="login-container">
@@ -16,14 +17,10 @@
             <h2>Bem-vindo</h2>
             <p class="logo-text">Acesse o Sonar Studio</p>
 
-            % if edited:
-                <p style="color: green;">Usuário {{edited}} editado com sucesso!</p>
-            % end
-            % if removed:
-                <p style="color: orange;">Usuário {{removed}} removido com sucesso.</p>
-            % end
-            % if created:
-                <p style="color: green;">Usuário {{created}} criado com sucesso!</p>
+            % if feedback_message:
+                <p class="feedback-message {{ 'success' if 'sucesso' in feedback_message or 'criada' in feedback_message else 'error' }}">
+                    {{ feedback_message }}
+                </p>
             % end
             
             <form action="/portal" method="POST">
