@@ -11,7 +11,7 @@
 <body>
     <div class="create-container">
         <div class="create-card">
-            <h1>Seja bem-vindo ao BMVC! (Bottle Powered)</h1>
+            <h1>Seja bem-vindo ao Sonar Studio!</h1>
             <h4>Cadastre seu nome ou apelido e uma senha numérica de acesso com 6 dígitos:</h4>
             
             % if feedback_message:

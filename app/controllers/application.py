@@ -1,5 +1,8 @@
 from app.controllers.datarecord import UserRecord, MessageRecord, SessionRecord
-from bottle import template, redirect, request, response, Bottle, static_file
+from bottle import template, redirect, request, response, Bottle, static_file, HTTPResponse
+import os
+import uuid
+
 import socketio
 
 
@@ -17,7 +20,8 @@ class Application:
             'edit': self.edit,
             'agendamento-sucesso': self.agendamento_sucesso,
             'minhas-sessoes': self.minhas_sessoes,
-            'admin': self.admin
+            'admin': self.admin,
+            # 'admin_remove_usuarios_e_sessoes': self.admin_remove_user_and_sessions,
         }
         
         self.__users = UserRecord()
@@ -45,6 +49,7 @@ class Application:
 
     # estabelecimento das rotas
     def setup_routes(self):
+
         @self.app.route('/static/<filepath:path>')
         def serve_static(filepath):
             return static_file(filepath, root='./app/static')
@@ -191,8 +196,116 @@ class Application:
             else:
                 redirect('/minhas-sessoes')
 
-        
+        # Rotas para o Admin: Remoção de usuários
+
+        @self.app.route('/admin/confirmar-remocao-usuario/<username>', method='GET')
+        def admin_confirmar_remocao_usuario_getter(username):
+            current_user = self.getCurrentUserBySessionId()
+            # Garante que apenas administradores possam acessar esta rota
+            if not current_user or not current_user.isAdmin():
+                self.feedback_message = "Acesso negado: Somente administradores podem remover usuários."
+                return redirect('/home')
+            
+            # Não permitir que um admin tente se auto-deletar por aqui, ou deletar outro admin
+            user_to_remove, user_type_to_remove = self.__users.getUserByUsername(username)
+            if not user_to_remove or user_to_remove.isAdmin(): # Se não encontrar ou for admin
+                    self.feedback_message = "Erro: Não é possível remover este usuário ou conta inexistente."
+                    return redirect('/admin') # Redireciona de volta para o painel admin
+
+            return template(
+                'app/views/html/admin_confirmar_remocao_usuario',
+                current_user=current_user, # O admin logado
+                usuario_a_remover=user_to_remove, # O usuário que será removido
+                transfered=True # Para renderizar o cabeçalho
+            )
+
+        @self.app.route('/admin/remover-usuario/<username>', method='POST')
+        def admin_remover_usuario_action(username):
+            print(username)
+            current_user = self.getCurrentUserBySessionId()
+            # Garante que apenas administradores possam executar esta ação
+            if not current_user or not current_user.isAdmin():
+                self.feedback_message = "Acesso negado: Somente administradores podem remover usuários."
+                return redirect('/home')
+            
+            # Não permitir que um admin tente se deletar por aqui, ou deletar outro admin
+            user_to_delete_obj, user_type_to_delete = self.__users.getUserByUsername(username)
+            if not user_to_delete_obj or user_to_delete_obj.isAdmin() or user_to_delete_obj.username == current_user.username:
+                self.feedback_message = "Erro: Não é possível remover este usuário."
+                return redirect('/admin') # Redireciona de volta para o painel admin
+
+            # Chama o método auxiliar para remover o usuário e suas sessões
+            admin_remove_user_and_sessions(username)
+            return redirect('/admin') # Redireciona de volta para o painel admin após a ação
+
+
+        def admin_remove_user_and_sessions(username_to_delete):
+            # Encontra o objeto do usuário para deletar
+            user_obj, account_type = self.__users.getUserByUsername(username_to_delete)
+            
+            if not user_obj:
+                self.feedback_message = f"Erro: Usuário '{username_to_delete}' não encontrado para remoção."
+                return
+
+            # Encontra e remove todas as sessões associadas a este usuário
+            sessions_of_user = self.__sessions.getSessions(username=username_to_delete)
+            sessions_removed_count = 0
+            for session in sessions_of_user:
+                removed_id = self.__sessions.removeSession(session.idSessao)
+                if removed_id:
+                    sessions_removed_count += 1
+                else:
+                    print(f"Atenção: Não foi possível remover a sessão ID {session.idSessao} para o usuário {username_to_delete}.")
+
+            # Remove o usuário do sistema
+            removed_user_name = self.__users.removeUser(user_obj) # user_obj é o objeto UserAccount
+
+            if removed_user_name:
+                self.feedback_message = f"Usuário '{removed_user_name}' e {sessions_removed_count} sessões associadas removidos com sucesso!"
+                self.update_account_list() # Atualiza lista de usuários via WebSocket se necessário
+            else:
+                self.feedback_message = f"Erro: Não foi possível remover o usuário '{username_to_delete}'."
+
 #------------------------------------------------------------------------------------
+
+        # Rota para upload de arquivos no websocket
+
+        @self.app.route('/upload-file', method='POST')
+        def upload_file_action():
+            current_user = self.getCurrentUserBySessionId()
+            if not current_user:
+                return HTTPResponse(status=401, body={'message': 'Não autorizado'})
+            
+            upload = request.files.get('file')
+            if not upload:
+                return HTTPResponse(status=400, body={'message': 'Nenhum arquivo enviado'})
+            
+            upload_dir = './app/static/uploads'
+            if not os.path.exists(upload_dir):
+                os.makedirs(upload_dir) # Se não existir, cria o diretório, mas ele existe. (?)
+
+            file_extension = os.path.splitext(upload.filename)[1]
+            unique_filename = str(uuid.uuid4()) + file_extension
+            file_path = os.path.join(upload_dir, unique_filename)
+
+            try:
+                upload.save(file_path)
+                file_url = f'/static/uploads/{unique_filename}'
+
+                self.sio.emit('message', {
+                    'type': 'file',
+                    'url': file_url,
+                    'filename': upload.filename,
+                    'username': current_user.username,
+                    'content': f"Enviou um arquivo: {upload.filename}"})
+
+                return HTTPResponse(status=200, body={'message': 'Arquivo enviado e notificado com sucesso', 'file_url': file_url})
+        
+            except Exception as e:
+
+                print(f"Erro ao salvar o arquivo: {e}")
+                return HTTPResponse(status=500, body={'message': 'Erro ao salvar o arquivo'})
+
         
         @self.app.route('/chat', method='GET')
         def chat_getter():
@@ -201,8 +314,20 @@ class Application:
         @self.app.route('/')
         @self.app.route('/portal', method='GET')
         def portal_getter():
-            message = self.feedback_message # Pega a mensagem do atributo da aplicação
-            self.feedback_message = None # Limpa para não ser exibida em futuras requisições GET sem post
+            message = self.feedback_message
+            self.feedback_message = None
+
+            current_session_id_on_portal_load = request.get_cookie('session_id')
+            current_user_on_portal_load = None
+            if current_session_id_on_portal_load:
+                current_user_on_portal_load = self.__users.getCurrentUser(current_session_id_on_portal_load)
+            
+            print(f"\n--- DEBUG: Carregando Portal (GET /portal) ---")
+            print(f"  Cookie session_id no request: {current_session_id_on_portal_load}")
+            print(f"  Usuário associado ao cookie: {current_user_on_portal_load.username if current_user_on_portal_load else 'NÃO AUTENTICADO'}")
+            print(f"--------------------------------------------------\n")
+            # ----------------------------------------
+
             return self.render('portal', feedback_message=message)
 
         @self.app.route('/edit', method='GET')
@@ -325,6 +450,10 @@ class Application:
     def portal(self, feedback_message=None): # feedback_message virá de portal_getter ou de redirects
         current_user = self.getCurrentUserBySessionId()
         
+        # if current_user:
+        #     print(f"DEBUG: Usuário '{current_user.username}' já está logado no portal.")
+        #     return redirect('/home') # Redireciona para home se já estiver logado 
+            
         # Prioriza a mensagem que vem diretamente como argumento da rota GET
         # Senão, pega a mensagem da instância da aplicação (feedback_message setado por redirects POST)
         final_message_to_display = feedback_message
@@ -397,13 +526,34 @@ class Application:
         return False
 
     def authenticate_user(self, username, password):
-        session_id = self.__users.checkUser(username, password)
-        if session_id:
-            print(f'Usuário {username} autenticado com sucesso!')
-            self.logout_user()
-            response.set_cookie('session_id', session_id, httponly=True, secure=True, max_age=3600)
+        print(f"\n--- DEBUG: Início da autenticação para {username} ---")
+        
+        # Verifica o usuário no banco de dados
+        new_session_id = self.__users.checkUser(username, password)
+        
+        if new_session_id: # Autenticação bem-sucedida
+            # Deletando explicitamente o cookie antigo para a raiz do domínio
+            old_session_id_from_cookie = request.get_cookie('session_id')
+            if old_session_id_from_cookie:
+                response.delete_cookie('session_id', path='/')
+                print(f"DEBUG: Cookie antigo '{old_session_id_from_cookie}' deletado.")
+                
+                # Limpa a sessão antiga do dicionário de usuários autenticados no servidor
+                if old_session_id_from_cookie in self.__users.getAuthenticatedUsers():
+                    del self.__users.getAuthenticatedUsers()[old_session_id_from_cookie]
+                    print(f"DEBUG: Sessão '{old_session_id_from_cookie}' removida de __authenticated_users.")
+
+            # Definindo o novo cookie com path explícito para a raiz
+            response.set_cookie('session_id', new_session_id, httponly=True, max_age=3600, path='/')
+            print(f"DEBUG: Novo cookie '{new_session_id}' setado para {username}.")
+            
+            self.feedback_message = f"Bem-vindo, {username}!" # Mensagem de sucesso no login
+            print(f"DEBUG: Autenticado {username}. Redirecionando para /home.")
             redirect('/home')
-        redirect('/portal')
+        else: # Se a autenticação falhar
+            self.feedback_message = "Usuário ou senha inválidos."
+            print(f"DEBUG: Falha na autenticação para {username}. Redirecionando para /portal.")
+            redirect('/portal')
 
     def delete_user(self):
         current_user = self.getCurrentUserBySessionId()
@@ -447,10 +597,22 @@ class Application:
             redirect('/edit')
 
     def logout_user(self):
+        print("\n--- DEBUG: Início do logout ---")
+
         session_id = request.get_cookie('session_id')
-        self.__users.logout(session_id)
-        response.delete_cookie('session_id')
-        self.update_users_list()
+        if session_id:
+            if session_id in self.__users.getAuthenticatedUsers():
+                logged_out_username = self.__users.getAuthenticatedUsers()[session_id].username
+                del self.__users.getAuthenticatedUsers()[session_id]
+                print(f"DEBUG: Sessão '{session_id}' para '{logged_out_username}' removida de __authenticated_users.")
+            
+            response.delete_cookie('session_id', path='/') # Deleta o cookie do navegador
+            print(f"DEBUG: Cookie '{session_id}' deletado do navegador.")
+        else:
+            print("DEBUG: Nenhum session_id encontrado no cookie para fazer logout.")
+        
+        self.update_users_list() # Notifica clientes sobre atualização da lista de usuários
+        print("--- DEBUG: Fim do logout ---")
 
     def chat(self):
         current_user = self.getCurrentUserBySessionId()
@@ -469,10 +631,14 @@ class Application:
         except UnicodeEncodeError as e:
             print(f"Encoding error: {e}")
             return "An error occurred while processing the message."
-
+        
+    
+        
+    
     # Websocket:
 
     def setup_websocket_events(self):
+
 
         @self.sio.event
         def connect(sid, environ):
@@ -481,17 +647,33 @@ class Application:
             for cookie in cookies.split(';'):
                 if 'session_id=' in cookie:
                     session_id = cookie.strip().split('=')[1]
-            user = self.__users.getCurrentUser(session_id)
-            if user:
-                self.sid_to_user[sid] = user
-                print(f'Client connected: {sid}, user: {getattr(user, 'username', None)}')
-                self.sio.emit('connected', {'data': 'Connected'}, room=sid)
+                    break
 
+            user = None
+            if session_id:
+                user = self.__users.getCurrentUser(session_id)
+                if user:
+                    # Mapeia o SID do WebSocket para o objeto de usuário autenticado
+                    self.sid_to_user[sid] = user
+                    print(f'DEBUG: WS Client conectado: SID={sid}, Usuário={user.username}, SessionID={session_id}.')
+                    self.sio.emit('connected', {'data': f'Conectado como {user.username}!'}, room=sid)
+                    self.update_users_list() # Atualiza lista de online para todos
+                else:
+                    print(f'DEBUG: WS Client conectado: SID={sid}, SessionID={session_id}, mas sem usuário ativo no servidor. Cookie antigo?')
+                    self.sio.emit('connected', {'data': 'Sessão inválida. Faça login novamente.'}, room=sid)
+            else:
+                print(f'DEBUG: WS Client conectado: SID={sid}, sem cookie de sessão. Conectado como visitante.')
+                self.sio.emit('connected', {'data': 'Conectado. Faça login para acesso completo.'}, room=sid)
+
+                
         @self.sio.event
         def disconnect(sid):
             if sid in self.sid_to_user:
+                disconnected_user = self.sid_to_user[sid].username
                 del self.sid_to_user[sid]
-            print(f'Client disconnected: {sid}')
+                print(f'Cliente desconectado: {sid}, usuário: {disconnected_user}')
+            else:
+                print(f'Client desconectado: {sid} (Usuário não autenticado.)')
 
         @self.sio.event
         def message(sid, data):
@@ -534,11 +716,19 @@ class Application:
     # os clientes conectados. Sempre que algum usuários LOGAR ou DESLOGAR
     # este método vai forçar esta atualização em todos os CHATS ativos. Este
     # método é chamado sempre que a rota ''
-    def update_users_list(self):
-        print('Atualizando a lista de usuários conectados...')
-        users = self.__users.getAuthenticatedUsers()
-        users_list = [{'username': user.username} for user in users.values()]
-        self.sio.emit('update_users_event', {'users': users_list})
+    def update_users_list(self): # Este método é da classe, então usa 'self'
+        print("DEBUG: update_users_list chamado.")
+    
+        connected_users_set = set()
+        for sid, user_obj in self.sid_to_user.items():
+            if user_obj: 
+                connected_users_set.add(user_obj.username)
+
+        
+        users_list_for_js = [{'username': username} for username in connected_users_set]
+        
+        print(f"DEBUG: update_users_list - Usuários para emitir: {users_list_for_js}")
+        self.sio.emit('update_users_event', {'users': users_list_for_js})
 
     # este método permite que o controller se comunique diretamente com todos
     # os clientes conectados. Sempre que algum usuários se removerem

@@ -94,13 +94,20 @@
                         <tr>
                             <th>Usuário</th>
                             <th>Tipo de Conta</th>
-                        </tr>
+                            <th>Ações</th> </tr>
                     </thead>
                     <tbody>
                         % for usuario in usuarios:
                         <tr>
                             <td>{{ usuario.username }}</td>
                             <td>{{ 'Administrador' if usuario.isAdmin() else 'Cliente' }}</td>
+                            <td>
+                                % if not usuario.isAdmin():
+                                    <a href="/admin/confirmar-remocao-usuario/{{usuario.username}}" class="button-link delete-admin-button">Remover</a>
+                                % else:
+                                    <span style="color: #666; font-style: italic;">Não Removível</span>
+                                % end
+                            </td>
                         </tr>
                         % end
                     </tbody>
